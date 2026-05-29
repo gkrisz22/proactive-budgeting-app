@@ -1,0 +1,38 @@
+
+services:
+  db:
+    # Expose the database port to your host machine so you can connect 
+    # using tools like pgAdmin or DBeaver locally.
+    ports:
+      - "5432:5432"
+
+  backend:
+    # Mount your local backend code directly into the container
+    volumes:
+      - ./backend:/usr/src/app
+    # Override the production command to enable hot-reloading
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8000:8000"
+
+  # In dev, we bypass Nginx entirely and run the Vite dev server
+  frontend:
+    image: node:20-slim
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    # Start Vite and expose it to the local network
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    ports:
+      - "5173:5173"
+    environment:
+      # Tell Vite to proxy API requests to the backend container
+      - API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # We disable Nginx in local dev to let Vite handle HMR (Hot Module Replacement)
+  nginx:
+    profiles:
+      - donotstart

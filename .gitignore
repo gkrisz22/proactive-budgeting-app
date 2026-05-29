@@ -1,0 +1,68 @@
+# =========================
+# Secrets & Environments
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Backend (Python / FastAPI)
+# =========================
+backend/venv/
+backend/env/
+ENV/
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/coverage.xml
+
+*.sqlite3
+*.db
+
+# =========================
+# Frontend (React / Vite / Node)
+# =========================
+frontend/node_modules/
+node_modules/
+
+frontend/dist/
+frontend/build/
+
+frontend/node_modules/.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Docker & Infrastructure
+# =========================
+postgres_data/
+docker-compose.override.yml
+
+# =========================
+# IDEs & OS Files
+# =========================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains (PyCharm, WebStorm)
+.idea/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
