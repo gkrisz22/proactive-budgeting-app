@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.dependencies import get_current_user
 from app.db.database import get_db
 from app.models.user import User
 from app.core.security import hash_password, verify_password, hash_token, create_access_token, create_refresh_token, decode_token
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserResponse
+from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserResponse, UpdateMeRequest
 
 router = APIRouter()
 
@@ -124,3 +125,23 @@ def logout(response: Response, request: Request, db: Session = Depends(get_db)):
                 user.refresh_token = None
                 db.commit()
     _clear_auth_cookies(response)
+    # Return None (not a new Response object) so FastAPI applies the
+    # injected `response` headers (delete-cookie) to the final 204 reply.
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    data: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if data.display_name is not None:
+        current_user.display_name = data.display_name
+        db.commit()
+        db.refresh(current_user)
+    return current_user
