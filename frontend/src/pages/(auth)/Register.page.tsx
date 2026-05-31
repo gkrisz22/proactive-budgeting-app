@@ -2,10 +2,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
-import { loginSchema, type LoginFormValues } from '@/features/auth/schemas';
+import { authApi } from '@/features/auth/api';
+import { registerSchema, type RegisterFormValues } from '@/features/auth/schemas';
 import { ApiError } from '@/lib/api';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -14,12 +15,13 @@ export default function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
+  } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
 
-  async function onSubmit(values: LoginFormValues) {
+  async function onSubmit(values: RegisterFormValues) {
     try {
+      await authApi.register(values.email, values.password, values.display_name);
       await login(values.email, values.password);
-      navigate('/dashboard', { replace: true });
+      navigate('/onboarding', { replace: true });
     } catch (err) {
       const message = err instanceof ApiError ? err.detail : 'Something went wrong';
       setError('root', { message });
@@ -40,11 +42,23 @@ export default function LoginPage() {
               <path d="M16 10v6l4 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-c-text tracking-tighter-1">Proactive Budgeting</h1>
-          <p className="text-sm text-c-muted mt-1">Sign in to your account</p>
+          <h1 className="text-xl font-bold text-c-text tracking-tighter-1">Create your account</h1>
+          <p className="text-sm text-c-muted mt-1">Get started with Proactive Budgeting</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="glass-panel rounded-2xl p-6 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-c-text">Your name</label>
+            <input
+              {...register('display_name')}
+              type="text"
+              autoComplete="name"
+              placeholder="Alex"
+              className="w-full h-13 px-4 rounded-md bg-surface-2/50 dark:bg-surface-2 border border-c-border text-base text-c-text placeholder:text-muted-2 outline-none focus:border-brand transition-colors"
+            />
+            {errors.display_name && <p className="text-xs text-danger">{errors.display_name.message}</p>}
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-c-text">Email</label>
             <input
@@ -62,8 +76,8 @@ export default function LoginPage() {
             <input
               {...register('password')}
               type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
               className="w-full h-13 px-4 rounded-md bg-surface-2/50 dark:bg-surface-2 border border-c-border text-base text-c-text placeholder:text-muted-2 outline-none focus:border-brand transition-colors"
             />
             {errors.password && <p className="text-xs text-danger">{errors.password.message}</p>}
@@ -80,13 +94,13 @@ export default function LoginPage() {
             disabled={isSubmitting}
             className="w-full h-13 rounded-lg bg-brand text-white font-semibold text-base tracking-tighter-1 disabled:opacity-45 hover:bg-brand-mid active:scale-[0.98] transition-all shadow-md shadow-brand/20 mt-2"
           >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? 'Creating account…' : 'Create account →'}
           </button>
 
           <p className="text-center text-sm text-c-muted pt-2">
-            No account?{' '}
-            <Link to="/auth/register" className="text-brand font-semibold hover:underline">
-              Create one
+            Already have an account?{' '}
+            <Link to="/auth/login" className="text-brand font-semibold hover:underline">
+              Sign in
             </Link>
           </p>
         </form>
