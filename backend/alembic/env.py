@@ -20,16 +20,28 @@ import sys
 # Add backend directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.core.config import settings
 from app.models.base import Base
 import app.models  # Important: import all models here
 
-# Override the url in alembic.ini with the one from our config.
-# If running locally (not in docker), replace 'db' host with 'localhost'.
-db_url = settings.DATABASE_URL
+# Resolve the database URL without importing the full Settings object.
+# Alembic only needs DATABASE_URL; importing settings would require
+# JWT_SECRET_KEY to be present even when just running migrations.
+_DEFAULT_DB_URL = "postgresql://postgres:Password1@db:5432/proactive_budgeting"
+db_url = os.environ.get("DATABASE_URL", _DEFAULT_DB_URL)
+
+# Load from .env if python-dotenv is available (dev convenience)
+if not os.environ.get("DATABASE_URL"):
+    try:
+        from dotenv import dotenv_values
+        _env = dotenv_values(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+        db_url = _env.get("DATABASE_URL", db_url)
+    except ImportError:
+        pass
+
+# When running outside Docker, swap the service hostname for localhost
 if os.environ.get("RUNNING_IN_DOCKER") != "true" and "@db:" in db_url:
     db_url = db_url.replace("@db:", "@localhost:")
-    
+
 config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
