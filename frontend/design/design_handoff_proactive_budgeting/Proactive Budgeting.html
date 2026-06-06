@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proaktív Büdzsé</title>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Tweaks defaults -->
+  <script id="tweak-defaults">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accentColor": "oklch(52% 0.22 270)",
+      "safeColor": "oklch(52% 0.16 155)",
+      "warnColor": "oklch(65% 0.15 72)",
+      "dangerColor": "oklch(52% 0.18 22)",
+      "fontSize": 15,
+      "showDemoData": true
+    }/*EDITMODE-END*/;
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="pb_design.jsx"></script>
+  <script type="text/babel" src="pb_components.jsx"></script>
+  <script type="text/babel" src="pb_screens.jsx"></script>
+  <script type="text/babel" src="pb_app.jsx"></script>
+
+  <!-- Tweaks panel -->
+  <script type="text/babel">
+    const { useState: useTweakState, useEffect: useTweakEffect } = React;
+
+    function TweaksPanel() {
+      const [visible, setVisible] = useTweakState(false);
+      const [vals, setVals] = useTweakState(TWEAK_DEFAULTS);
+
+      useTweakEffect(() => {
+        window.addEventListener('message', e => {
+          if (e.data?.type === '__activate_edit_mode')   setVisible(true);
+          if (e.data?.type === '__deactivate_edit_mode') setVisible(false);
+        });
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      }, []);
+
+      function set(key, value) {
+        const next = { ...vals, [key]: value };
+        setVals(next);
+        applyTweaks(next);
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*');
+      }
+
+      function applyTweaks(v) {
+        const r = document.documentElement.style;
+        r.setProperty('--c-brand',  v.accentColor);
+        r.setProperty('--c-safe',   v.safeColor);
+        r.setProperty('--c-warn',   v.warnColor);
+        r.setProperty('--c-danger', v.dangerColor);
+        r.setProperty('font-size',  v.fontSize + 'px');
+      }
+
+      useTweakEffect(() => { applyTweaks(vals); }, []);
+
+      if (!visible) return null;
+
+      const colorOptions = [
+        { label: 'Violet', value: 'oklch(52% 0.22 270)' },
+        { label: 'Indigo', value: 'oklch(48% 0.22 255)' },
+        { label: 'Teal',   value: 'oklch(52% 0.16 192)' },
+        { label: 'Rose',   value: 'oklch(52% 0.20 355)' },
+      ];
+
+      return (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          background: 'white', borderRadius: 16, padding: 16, width: 220,
+          boxShadow: '0 8px 32px oklch(0% 0 0 / 16%), 0 2px 8px oklch(0% 0 0 / 8%)',
+          border: '1px solid oklch(91% 0.012 270)',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, letterSpacing: '0.3px' }}>TWEAKS</p>
+
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--c-muted)', marginBottom: 6 }}>Fő szín</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            {colorOptions.map(o => (
+              <div key={o.label} onClick={() => set('accentColor', o.value)}
+                title={o.label}
+                style={{
+                  width: 28, height: 28, borderRadius: 8, cursor: 'pointer',
+                  background: o.value,
+                  outline: vals.accentColor === o.value ? '2.5px solid var(--c-text)' : '2px solid transparent',
+                  outlineOffset: 2,
+                  transition: 'outline 0.1s',
+                }}
+              />
+            ))}
+          </div>
+
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--c-muted)', marginBottom: 6 }}>
+            Betűméret: {vals.fontSize}px
+          </p>
+          <input type="range" min="13" max="18" step="1" value={vals.fontSize}
+            onChange={e => set('fontSize', Number(e.target.value))}
+            style={{ width: '100%', accentColor: 'var(--c-brand)', marginBottom: 12 }}
+          />
+
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--c-muted)', marginBottom: 6 }}>Zöld (biztonságos)</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+            {[
+              { l: 'Forest', v: 'oklch(52% 0.16 155)' },
+              { l: 'Emerald', v: 'oklch(58% 0.18 162)' },
+              { l: 'Teal', v: 'oklch(55% 0.14 182)' },
+            ].map(o => (
+              <div key={o.l} onClick={() => set('safeColor', o.v)}
+                style={{
+                  width: 28, height: 28, borderRadius: 8, cursor: 'pointer', background: o.v,
+                  outline: vals.safeColor === o.v ? '2.5px solid var(--c-text)' : '2px solid transparent',
+                  outlineOffset: 2,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const tweakRoot = document.createElement('div');
+    document.body.appendChild(tweakRoot);
+    ReactDOM.createRoot(tweakRoot).render(<TweaksPanel />);
+  </script>
+</body>
+</html>
