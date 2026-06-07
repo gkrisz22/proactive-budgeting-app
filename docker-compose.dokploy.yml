@@ -34,7 +34,7 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       COOKIE_SAMESITE: ${COOKIE_SAMESITE:-lax}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
-      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:?Set CORS_ALLOW_ORIGINS in Dokploy environment variables}
+      CORS_ALLOW_ORIGINS: '["${APP_ORIGIN:?Set APP_ORIGIN in Dokploy environment variables}"]'
     depends_on:
       db:
         condition: service_healthy
